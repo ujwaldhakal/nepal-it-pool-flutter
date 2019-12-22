@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 import 'package:simple_gravatar/simple_gravatar.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,59 +13,34 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   List developersList;
-
+  String url = "https://itpool.network";
+  String queryParam = "";
+  Widget appText  = new Text("Nepal It Pool");
+  bool searchButtonState = false;
+  bool LoadingAppState = false;
   void showSearchInput() {
-    print("keyword search");
-  }
+    this.setState(()  {
+    this.searchButtonState = true;
+    this.appText = new TextFormField(
+      cursorColor: Colors.white,
+      decoration: InputDecoration(
+          hintText: 'Enter a search term'
+      ),
+      textInputAction: TextInputAction.done,
+      onFieldSubmitted: (value) {
 
-  @override
-  void initState() {
-    super.initState();
-    print("has this been called");
-    this.getDevelopersList();
-  }
+        var searchUrl = url + "?name="+value;
 
-  void showOtherListOptions() {
-    print("keyword search");
-  }
-
-  void doSomething() {
-    print("keyword search");
-  }
-
-  Future getDevelopersList() async {
-
-    var response = await http.get('https://itpool.network?limit=1000');
-
-    var jsonResponse = jsonDecode(response.body);
-
-    this.setState(() {
-      developersList = jsonResponse["data"];
+        print(searchUrl);
+        getDevelopersList(searchUrl);
+      },
+    );
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: new AppBar(
-        title: Text("Nepal It Pool"),
-        leading: new Image(
-            image: NetworkImage(
-                'https://i0.wp.com/mindbodyshe.com/wp-content/uploads/2018/07/samples-of-logo-designs-sample-of-company-logo-design-ngo-logo-design-samples.jpg?w=600')),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search',
-            onPressed: showSearchInput,
-          ),
-          IconButton(
-            icon: const Icon(Icons.list),
-            tooltip: 'More filters',
-            onPressed: showOtherListOptions,
-          )
-        ],
-      ),
-      body: new ListView.builder(
+  Widget getPageData() {
+    if(!this.LoadingAppState) {
+      return new ListView.builder(
           itemCount: developersList == null ? 0 : developersList.length,
           itemBuilder: (BuildContext context, int index) {
             String name = developersList[index]["name"];
@@ -87,10 +63,109 @@ class HomePageState extends State<HomePage> {
                   subtitle: Text(
                       experience + ' years of experience skills:' + skills),
                   onTap: () {
-                    getDevelopersList();
+//                    getDevelopersList();
                   }),
             );
-          }),
+          });
+
+      }
+
+    return SpinKitRotatingCircle(
+      color: Colors.blue,
+      size: 50.0,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print("has this been called");
+    print(url);
+    this.getDevelopersList(url);
+  }
+
+  void showOtherListOptions() {
+    print("keyword search");
+  }
+
+  void doSomething() {
+//    this.setState(()=>{
+//      this.appText = new Text("search input here");
+//    });
+    print("keyword search");
+  }
+
+
+  void removeSearchState() {
+
+    this.setState((){
+      this.searchButtonState = false;
+      this.appText = new Text("Nepal It Pool");
+    });
+    getDevelopersList(url);
+  }
+
+
+  Future getDevelopersList(url) async {
+
+
+    this.setState(() {
+      LoadingAppState = true;
+    });
+    var response = await http.get(url);
+
+    var jsonResponse = jsonDecode(response.body);
+
+    this.setState(() {
+      developersList = jsonResponse["data"];
+      LoadingAppState = false;
+    });
+  }
+
+  Widget getSearchButtonState() {
+    if(!searchButtonState) {
+      return getSearchButton();
+    }
+
+    return revertSearchState();
+
+  }
+
+  getSearchButton() {
+    return IconButton(
+      icon: const Icon(Icons.search),
+      tooltip: 'Search',
+      onPressed: showSearchInput,
+    );
+  }
+
+  revertSearchState() {
+    return IconButton(
+      icon: const Icon(Icons.close),
+      tooltip: 'Search',
+      onPressed: removeSearchState,
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: new AppBar(
+        title: this.appText,
+        leading: new Image(
+            image: NetworkImage(
+                'https://i0.wp.com/mindbodyshe.com/wp-content/uploads/2018/07/samples-of-logo-designs-sample-of-company-logo-design-ngo-logo-design-samples.jpg?w=600')),
+        actions: <Widget>[
+          getSearchButtonState(),
+          IconButton(
+            icon: const Icon(Icons.list),
+            tooltip: 'More filters',
+            onPressed: showOtherListOptions,
+          ),
+        ],
+      ),
+      body: getPageData()
     );
   }
 }
