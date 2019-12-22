@@ -18,6 +18,7 @@ class HomePageState extends State<HomePage> {
   Widget appText  = new Text("Nepal It Pool");
   bool searchButtonState = false;
   bool LoadingAppState = false;
+  bool isSwitched = false;
   void showSearchInput() {
     this.setState(()  {
     this.searchButtonState = true;
@@ -147,6 +148,28 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  Widget sortingWidget() {
+    return new PopupMenuButton<int>(
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 0,
+          child: SwitchListTile(
+            title: const Text('Sort by experience'),
+            value: false,
+            onChanged: (bool value) { setState(() { isSwitched = value; }); },
+          ),
+        ),
+        PopupMenuItem(
+          value: 0,
+          child: SwitchListTile(
+            title: const Text('Sort by job seeking'),
+            value: false,
+            onChanged: (bool value) { setState(() { isSwitched = value; }); },
+          ),
+        )
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,11 +181,7 @@ class HomePageState extends State<HomePage> {
                 'https://i0.wp.com/mindbodyshe.com/wp-content/uploads/2018/07/samples-of-logo-designs-sample-of-company-logo-design-ngo-logo-design-samples.jpg?w=600')),
         actions: <Widget>[
           getSearchButtonState(),
-          IconButton(
-            icon: const Icon(Icons.list),
-            tooltip: 'More filters',
-            onPressed: showOtherListOptions,
-          ),
+          sortingWidget(),
         ],
       ),
       body: getPageData()
