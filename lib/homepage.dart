@@ -18,7 +18,14 @@ class HomePageState extends State<HomePage> {
   Widget appText  = new Text("Nepal It Pool");
   bool searchButtonState = false;
   bool LoadingAppState = false;
-  bool isSwitched = false;
+  bool _sortByExperienceSwitch = false;
+  int _popMenuBtn = 0;
+  bool _sortByJobSeekingSwitch = false;
+  ScrollController _scrollController;
+  int totalDevs = 0;
+  int currentOffset = 0;
+  int limit = 10;
+
   void showSearchInput() {
     this.setState(()  {
     this.searchButtonState = true;
@@ -42,8 +49,10 @@ class HomePageState extends State<HomePage> {
   Widget getPageData() {
     if(!this.LoadingAppState) {
       return new ListView.builder(
-          itemCount: developersList == null ? 0 : developersList.length,
-          itemBuilder: (BuildContext context, int index) {
+          controller: _scrollController,
+          itemCount: this.developersList.length,
+          itemBuilder: (BuildContext context, index) {
+
             String name = developersList[index]["name"];
             String experience = developersList[index]["experience"].toString();
             String skills = developersList[index]["skills"].join(",");
@@ -57,6 +66,7 @@ class HomePageState extends State<HomePage> {
             );
             return Card(
               child: ListTile(
+                contentPadding: new EdgeInsets.all(20.5),
                   leading: new Image(
                     image: NetworkImage(url),
                   ),
@@ -77,8 +87,38 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+
+  _scrollListener() async{
+    int currentDevsListCount = this.developersList.length;
+    if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+
+      print("scroll bottom reached");
+      if(totalDevs > currentDevsListCount) {
+
+        this.currentOffset = this.currentOffset + this.limit;
+        var url = this.url + '?offset='+this.currentOffset.toString()+'&limit='+this.limit.toString();
+        var response = await http.get(url);
+
+
+        var jsonResponse = jsonDecode(response.body);
+        print(url);
+        List newDev = jsonResponse["data"];
+        newDev = [...this.developersList,...newDev];
+        this.setState(() {
+          developersList =  newDev;
+        });
+
+      }
+    }
+  }
+
   @override
   void initState() {
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+
+
     super.initState();
     print("has this been called");
     print(url);
@@ -115,12 +155,16 @@ class HomePageState extends State<HomePage> {
     });
     var response = await http.get(url);
 
-    var jsonResponse = jsonDecode(response.body);
 
+    var jsonResponse = jsonDecode(response.body);
     this.setState(() {
       developersList = jsonResponse["data"];
       LoadingAppState = false;
     });
+
+    this.totalDevs = jsonResponse["total"];
+
+
   }
 
   Widget getSearchButtonState() {
@@ -148,23 +192,32 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  handleExperienceSortingToggle(value) {
+
+    this.setState(() {
+      this._sortByExperienceSwitch = value;
+    }
+    );
+  }
+
   Widget sortingWidget() {
-    return new PopupMenuButton<int>(
+    return PopupMenuButton<int>(
+
       itemBuilder: (context) => [
         PopupMenuItem(
-          value: 0,
+          value : this._popMenuBtn,
           child: SwitchListTile(
             title: const Text('Sort by experience'),
-            value: false,
-            onChanged: (bool value) { setState(() { isSwitched = value; }); },
+            value: this._sortByExperienceSwitch,
+            onChanged: handleExperienceSortingToggle,
           ),
         ),
+
         PopupMenuItem(
-          value: 0,
           child: SwitchListTile(
             title: const Text('Sort by job seeking'),
-            value: false,
-            onChanged: (bool value) { setState(() { isSwitched = value; }); },
+            value: this._sortByJobSeekingSwitch,
+            onChanged: (bool value) { setState(() { _sortByJobSeekingSwitch = value; }); },
           ),
         )
       ],
@@ -184,7 +237,7 @@ class HomePageState extends State<HomePage> {
           sortingWidget(),
         ],
       ),
-      body: getPageData()
+      body: getPageData(),
     );
   }
 }
