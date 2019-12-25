@@ -25,6 +25,7 @@ class HomePageState extends State<HomePage> {
   int totalDevs = 0;
   int currentOffset = 0;
   int limit = 10;
+  bool _lights = false;
 
   void showSearchInput() {
     this.setState(()  {
@@ -50,7 +51,7 @@ class HomePageState extends State<HomePage> {
     if(!this.LoadingAppState) {
       return new ListView.builder(
           controller: _scrollController,
-          itemCount: this.developersList.length,
+          itemCount: this.developersList == null ? 0 : this.developersList.length ,
           itemBuilder: (BuildContext context, index) {
 
             String name = developersList[index]["name"];
@@ -194,47 +195,79 @@ class HomePageState extends State<HomePage> {
 
   handleExperienceSortingToggle(value) {
 
+    if(value) {
+      var sortUrl = url + "?sort=experience&sort_type=desc";
+      getDevelopersList(sortUrl);
+    }
+    if(!value) {
+      getDevelopersList(this.url);
+    }
     this.setState(() {
       this._sortByExperienceSwitch = value;
+      this._sortByJobSeekingSwitch = false;
+    }
+    );
+  }
+
+
+  handleIsJobSearchingSort(value) {
+
+    if(value) {
+      var sortUrl = url + "?sort=actively_job_searching&sort_type=desc";
+      getDevelopersList(sortUrl);
+    }
+    if(!value) {
+      getDevelopersList(this.url);
+    }
+    this.setState(() {
+      this._sortByJobSeekingSwitch = value;
+      this._sortByExperienceSwitch = false;
     }
     );
   }
 
   Widget sortingWidget() {
-    return PopupMenuButton<int>(
-
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value : this._popMenuBtn,
-          child: SwitchListTile(
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+            child: Text(
+              'Some more filter',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              ),
+            ),
+          ),
+          SwitchListTile(
             title: const Text('Sort by experience'),
-            value: this._sortByExperienceSwitch,
+            value: _sortByExperienceSwitch,
             onChanged: handleExperienceSortingToggle,
           ),
-        ),
 
-        PopupMenuItem(
-          child: SwitchListTile(
-            title: const Text('Sort by job seeking'),
-            value: this._sortByJobSeekingSwitch,
-            onChanged: (bool value) { setState(() { _sortByJobSeekingSwitch = value; }); },
+          SwitchListTile(
+            title: const Text('Sort by job search'),
+            value: _sortByJobSeekingSwitch,
+            onChanged: handleIsJobSearchingSort,
           ),
-        )
-      ],
+
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: sortingWidget(),
       appBar: new AppBar(
         title: this.appText,
-        leading: new Image(
-            image: NetworkImage(
-                'https://i0.wp.com/mindbodyshe.com/wp-content/uploads/2018/07/samples-of-logo-designs-sample-of-company-logo-design-ngo-logo-design-samples.jpg?w=600')),
         actions: <Widget>[
-          getSearchButtonState(),
-          sortingWidget(),
+          getSearchButtonState()
         ],
       ),
       body: getPageData(),
